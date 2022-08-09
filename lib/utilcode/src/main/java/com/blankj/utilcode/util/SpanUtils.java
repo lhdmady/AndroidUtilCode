@@ -1,6 +1,7 @@
 package com.blankj.utilcode.util;
 
 import android.annotation.SuppressLint;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BlurMaskFilter;
@@ -14,14 +15,6 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.support.annotation.ColorInt;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.FloatRange;
-import android.support.annotation.IntDef;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.text.Layout;
 import android.text.Layout.Alignment;
 import android.text.SpannableStringBuilder;
@@ -57,6 +50,15 @@ import java.io.Serializable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import static android.graphics.BlurMaskFilter.Blur;
 
@@ -104,7 +106,6 @@ public final class SpanUtils {
     private int           bulletRadius;
     private int           bulletGapWidth;
     private int           fontSize;
-    private boolean       fontSizeIsDp;
     private float         proportion;
     private float         xProportion;
     private boolean       isStrikethrough;
@@ -139,7 +140,7 @@ public final class SpanUtils {
     private int spaceColor;
 
     private SerializableSpannableStringBuilder mBuilder;
-    private boolean isCreated;
+    private boolean                            isCreated;
 
     private       int mType;
     private final int mTypeCharSequence = 0;
@@ -349,8 +350,12 @@ public final class SpanUtils {
      * @return the single {@link SpanUtils} instance
      */
     public SpanUtils setFontSize(@IntRange(from = 0) final int size, final boolean isSp) {
-        this.fontSize = size;
-        this.fontSizeIsDp = isSp;
+        if (isSp) {
+            final float fontScale = Resources.getSystem().getDisplayMetrics().scaledDensity;
+            this.fontSize = (int) (size * fontScale + 0.5f);
+        } else {
+            this.fontSize = size;
+        }
         return this;
     }
 
@@ -514,9 +519,7 @@ public final class SpanUtils {
      * @return the single {@link SpanUtils} instance
      */
     public SpanUtils setClickSpan(@NonNull final ClickableSpan clickSpan) {
-        if (mTextView != null && mTextView.getMovementMethod() == null) {
-            mTextView.setMovementMethod(LinkMovementMethod.getInstance());
-        }
+        setMovementMethodIfNeed();
         this.clickSpan = clickSpan;
         return this;
     }
@@ -533,9 +536,7 @@ public final class SpanUtils {
     public SpanUtils setClickSpan(@ColorInt final int color,
                                   final boolean underlineText,
                                   final View.OnClickListener listener) {
-        if (mTextView != null && mTextView.getMovementMethod() == null) {
-            mTextView.setMovementMethod(LinkMovementMethod.getInstance());
-        }
+        setMovementMethodIfNeed();
         this.clickSpan = new ClickableSpan() {
 
             @Override
@@ -562,11 +563,15 @@ public final class SpanUtils {
      * @return the single {@link SpanUtils} instance
      */
     public SpanUtils setUrl(@NonNull final String url) {
+        setMovementMethodIfNeed();
+        this.url = url;
+        return this;
+    }
+
+    private void setMovementMethodIfNeed() {
         if (mTextView != null && mTextView.getMovementMethod() == null) {
             mTextView.setMovementMethod(LinkMovementMethod.getInstance());
         }
-        this.url = url;
-        return this;
     }
 
     /**
@@ -889,7 +894,7 @@ public final class SpanUtils {
             );
         }
         if (fontSize != -1) {
-            mBuilder.setSpan(new AbsoluteSizeSpan(fontSize, fontSizeIsDp), start, end, flag);
+            mBuilder.setSpan(new AbsoluteSizeSpan(fontSize, false), start, end, flag);
         }
         if (proportion != -1) {
             mBuilder.setSpan(new RelativeSizeSpan(proportion), start, end, flag);

@@ -8,14 +8,15 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
-import android.support.annotation.IntDef;
-import android.support.annotation.RequiresPermission;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
+
+import androidx.annotation.IntDef;
+import androidx.annotation.RequiresPermission;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import static android.Manifest.permission.EXPAND_STATUS_BAR;
 
@@ -91,21 +92,26 @@ public class NotificationUtils {
      * @param consumer      The consumer of create the builder of notification.
      */
     public static void notify(String tag, int id, ChannelConfig channelConfig, Utils.Consumer<NotificationCompat.Builder> consumer) {
+        NotificationManagerCompat.from(Utils.getApp()).notify(tag, id, getNotification(channelConfig, consumer));
+    }
+
+
+    public static Notification getNotification(ChannelConfig channelConfig, Utils.Consumer<NotificationCompat.Builder> consumer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) Utils.getApp().getSystemService(Context.NOTIFICATION_SERVICE);
             //noinspection ConstantConditions
             nm.createNotificationChannel(channelConfig.getNotificationChannel());
         }
 
-        NotificationManagerCompat nmc = NotificationManagerCompat.from(Utils.getApp());
-
         NotificationCompat.Builder builder = new NotificationCompat.Builder(Utils.getApp());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             builder.setChannelId(channelConfig.mNotificationChannel.getId());
         }
-        consumer.accept(builder);
+        if (consumer != null) {
+            consumer.accept(builder);
+        }
 
-        nmc.notify(tag, id, builder.build());
+        return builder.build();
     }
 
     /**

@@ -1,3 +1,21 @@
+* `21/12/06` [add] Publish v1.31.0
+* `21/05/13` [add] Support publish mavenCentral.
+* `21/02/22` [add] Fix ToastUtils rtl bug. Publish v1.30.6.
+* `20/11/16` [add] Add ImageUtils#save2Album support param of dirName.
+* `20/11/13` [add] Fix MessengerUtils ANR. Add NetworkUtils#getWifiScanResult, [add|remove]OnWifiChangedConsumer. Publish v1.30.5.
+* `20/10/29` [add] Fix MessengerUtils startService IllegalStateException. Publish v1.30.4.
+* `20/10/28` [add] Fix BusUtils ConcurrentModificationException. Publish v1.30.3.
+* `20/10/27` [add] Fix AppUtils#getAppSignatures. Add DeviceUtils#isDevelopmentSettingsEnabled. Publish v1.30.2.
+* `20/10/26` [add] Fix AppUtils#isAppForeground. Publish v1.30.1.
+* `20/10/24` [add] Publish v1.30.0.
+* `20/10/23` [fix] LanguageUtils crash on some device.
+* `20/10/21` [add] LogUtils.Config#setOnConsoleOutputListener, setOnFileOutputListener, addFileExtraHead. LogUtils.getCurrentLogFilePath.
+* `20/10/20` [opt] ToastUtils.
+* `20/10/12` [add] PermissionUtils#explain.
+* `20/10/10` [add] ClipboardUtils.
+* `20/10/08` [add] VolumeUtils.
+* `20/09/06` [add] DebouncingUtils#isValid.
+* `20/09/04` [fix] ToastUtils adapt SDK 30.
 * `20/05/28` [fix] IntentUtils#getInstallAppIntent file exist wrong. Publish v1.29.0.
 * `20/05/23` [fix] BusUtils#postSticky times not right. Publish v1.28.6.
 * `20/05/22` [add] IntentUtils#getInstallAppIntent support Uri param.
@@ -92,6 +110,7 @@
 * `19/04/24` [upd] The swipe panel.
 * `19/03/17` [fix] The ugly UI.
 * `19/03/14` [fix] AdaptScreenUtils didn't work on some HaWei tablet.
+* `19/03/09` [fix] UriUtils#uri2File.
 * `19/03/08` [add] LogUtils support multi process. Publish v1.23.7.
 * `19/03/02` [fix] LogUtils#file.
 * `19/02/28` [fix] ImageUtils#calculateInSampleSize. Publish v1.23.6.

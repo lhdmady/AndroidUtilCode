@@ -11,8 +11,8 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.Build;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
-import android.support.annotation.RequiresPermission;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresPermission;
 import android.util.DisplayMetrics;
 import android.view.Surface;
 import android.view.View;
@@ -111,6 +111,68 @@ public final class ScreenUtils {
      */
     public static int getScreenDensityDpi() {
         return Resources.getSystem().getDisplayMetrics().densityDpi;
+    }
+
+    /**
+     * Return the exact physical pixels per inch of the screen in the Y dimension.
+     *
+     * @return the exact physical pixels per inch of the screen in the Y dimension
+     */
+    public static float getScreenXDpi() {
+        return Resources.getSystem().getDisplayMetrics().xdpi;
+    }
+
+    /**
+     * Return the exact physical pixels per inch of the screen in the Y dimension.
+     *
+     * @return the exact physical pixels per inch of the screen in the Y dimension
+     */
+    public static float getScreenYDpi() {
+        return Resources.getSystem().getDisplayMetrics().ydpi;
+    }
+
+    /**
+     * Return the distance between the given View's X (start point of View's width) and the screen width.
+     *
+     * @return the distance between the given View's X (start point of View's width) and the screen width.
+     */
+    public int calculateDistanceByX(View view) {
+        int[] point = new int[2];
+        view.getLocationOnScreen(point);
+        return getScreenWidth() - point[0];
+    }
+
+    /**
+     * Return the distance between the given View's Y (start point of View's height) and the screen height.
+     *
+     * @return the distance between the given View's Y (start point of View's height) and the screen height.
+     */
+    public int calculateDistanceByY(View view) {
+        int[] point = new int[2];
+        view.getLocationOnScreen(point);
+        return getScreenHeight() - point[1];
+    }
+
+    /**
+     * Return the X coordinate of the given View on the screen.
+     *
+     * @return X coordinate of the given View on the screen.
+     */
+    public int getViewX(View view) {
+        int[] point = new int[2];
+        view.getLocationOnScreen(point);
+        return point[0];
+    }
+
+    /**
+     * Return the Y coordinate of the given View on the screen.
+     *
+     * @return Y coordinate of the given View on the screen.
+     */
+    public int getViewY(View view) {
+        int[] point = new int[2];
+        view.getLocationOnScreen(point);
+        return point[1];
     }
 
     /**
@@ -237,27 +299,12 @@ public final class ScreenUtils {
      */
     public static Bitmap screenShot(@NonNull final Activity activity, boolean isDeleteStatusBar) {
         View decorView = activity.getWindow().getDecorView();
-        boolean drawingCacheEnabled = decorView.isDrawingCacheEnabled();
-        boolean willNotCacheDrawing = decorView.willNotCacheDrawing();
-        decorView.setDrawingCacheEnabled(true);
-        decorView.setWillNotCacheDrawing(false);
-        Bitmap bmp = decorView.getDrawingCache();
-        if (bmp == null) {
-            decorView.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-            decorView.layout(0, 0, decorView.getMeasuredWidth(), decorView.getMeasuredHeight());
-            decorView.buildDrawingCache();
-            bmp = Bitmap.createBitmap(decorView.getDrawingCache());
-        }
-        if (bmp == null) return null;
+        Bitmap bmp = UtilsBridge.view2Bitmap(decorView);
         DisplayMetrics dm = new DisplayMetrics();
         activity.getWindowManager().getDefaultDisplay().getMetrics(dm);
-        Bitmap ret;
         if (isDeleteStatusBar) {
-            Resources resources = activity.getResources();
-            int resourceId = resources.getIdentifier("status_bar_height", "dimen", "android");
-            int statusBarHeight = resources.getDimensionPixelSize(resourceId);
-            ret = Bitmap.createBitmap(
+            int statusBarHeight = UtilsBridge.getStatusBarHeight();
+            return Bitmap.createBitmap(
                     bmp,
                     0,
                     statusBarHeight,
@@ -265,12 +312,8 @@ public final class ScreenUtils {
                     dm.heightPixels - statusBarHeight
             );
         } else {
-            ret = Bitmap.createBitmap(bmp, 0, 0, dm.widthPixels, dm.heightPixels);
+            return Bitmap.createBitmap(bmp, 0, 0, dm.widthPixels, dm.heightPixels);
         }
-        decorView.destroyDrawingCache();
-        decorView.setWillNotCacheDrawing(willNotCacheDrawing);
-        decorView.setDrawingCacheEnabled(drawingCacheEnabled);
-        return ret;
     }
 
     /**

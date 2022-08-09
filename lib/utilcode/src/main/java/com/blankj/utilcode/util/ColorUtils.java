@@ -1,12 +1,12 @@
 package com.blankj.utilcode.util;
 
 import android.graphics.Color;
-import android.support.annotation.ColorInt;
-import android.support.annotation.ColorRes;
-import android.support.annotation.FloatRange;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 /**
  * <pre>
@@ -203,5 +203,15 @@ public final class ColorUtils {
     public static int getRandomColor(final boolean supportAlpha) {
         int high = supportAlpha ? (int) (Math.random() * 0x100) << 24 : 0xFF000000;
         return high | (int) (Math.random() * 0x1000000);
+    }
+
+    /**
+     * Return whether the color is light.
+     *
+     * @param color The color.
+     * @return {@code true}: yes<br>{@code false}: no
+     */
+    public static boolean isLightColor(@ColorInt int color) {
+        return 0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color) >= 127.5;
     }
 }

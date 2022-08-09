@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.*
 import android.os.Bundle
-import android.support.annotation.ColorInt
 import android.text.Layout
 import android.text.SpannableStringBuilder
 import android.text.TextPaint
@@ -14,6 +13,7 @@ import android.text.style.ClickableSpan
 import android.text.style.UpdateAppearance
 import android.view.View
 import android.view.animation.LinearInterpolator
+import androidx.annotation.ColorInt
 import com.blankj.common.activity.CommonActivity
 import com.blankj.utilcode.pkg.R
 import com.blankj.utilcode.util.SpanUtils
@@ -81,6 +81,7 @@ class SpanActivity : CommonActivity() {
         SpanUtils.with(spanAboutTv)
                 .appendLine("SpanUtils").setBackgroundColor(Color.LTGRAY).setBold().setForegroundColor(Color.YELLOW).setHorizontalAlign(Layout.Alignment.ALIGN_CENTER)
                 .appendLine("前景色").setForegroundColor(Color.GREEN)
+//                .appendLine("测试哈哈").setForegroundColor(Color.RED).setBackgroundColor(Color.LTGRAY).setFontSize(10).setLineHeight(280, SpanUtils.ALIGN_BOTTOM)
                 .appendLine("背景色").setBackgroundColor(Color.LTGRAY)
                 .appendLine("行高居中对齐").setLineHeight(2 * lineHeight, SpanUtils.ALIGN_CENTER).setBackgroundColor(Color.LTGRAY)
                 .appendLine("行高底部对齐").setLineHeight(2 * lineHeight, SpanUtils.ALIGN_BOTTOM).setBackgroundColor(Color.GREEN)

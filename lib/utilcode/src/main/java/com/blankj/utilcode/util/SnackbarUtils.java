@@ -1,14 +1,6 @@
 package com.blankj.utilcode.util;
 
 import android.os.Build;
-import android.support.annotation.ColorInt;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.IntDef;
-import android.support.annotation.IntRange;
-import android.support.annotation.LayoutRes;
-import android.support.annotation.NonNull;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.Snackbar;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -18,9 +10,19 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 /**
  * <pre>
@@ -47,7 +49,7 @@ public final class SnackbarUtils {
     private static final int COLOR_ERROR   = 0xFFFF0000;
     private static final int COLOR_MESSAGE = 0xFFFFFFFF;
 
-    private static WeakReference<Snackbar> sReference;
+    private static WeakReference<Snackbar> sWeakSnackbar;
 
     private View                 view;
     private CharSequence         message;
@@ -223,11 +225,11 @@ public final class SnackbarUtils {
             spannableString.setSpan(
                     colorSpan, 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             );
-            sReference = new WeakReference<>(Snackbar.make(view, spannableString, duration));
+            sWeakSnackbar = new WeakReference<>(Snackbar.make(view, spannableString, duration));
         } else {
-            sReference = new WeakReference<>(Snackbar.make(view, message, duration));
+            sWeakSnackbar = new WeakReference<>(Snackbar.make(view, message, duration));
         }
-        final Snackbar snackbar = sReference.get();
+        final Snackbar snackbar = sWeakSnackbar.get();
         final Snackbar.SnackbarLayout snackbarView = (Snackbar.SnackbarLayout) snackbar.getView();
         if (isShowTop) {
             for (int i = 0; i < snackbarView.getChildCount(); i++) {
@@ -316,9 +318,9 @@ public final class SnackbarUtils {
      * Dismiss the snackbar.
      */
     public static void dismiss() {
-        if (sReference != null && sReference.get() != null) {
-            sReference.get().dismiss();
-            sReference = null;
+        if (sWeakSnackbar != null && sWeakSnackbar.get() != null) {
+            sWeakSnackbar.get().dismiss();
+            sWeakSnackbar = null;
         }
     }
 
@@ -328,7 +330,7 @@ public final class SnackbarUtils {
      * @return the view of snackbar
      */
     public static View getView() {
-        Snackbar snackbar = sReference.get();
+        Snackbar snackbar = sWeakSnackbar.get();
         if (snackbar == null) return null;
         return snackbar.getView();
     }

@@ -2,9 +2,6 @@ package com.blankj.utilcode.util;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.CallSuper;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -24,6 +21,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import androidx.annotation.CallSuper;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
 
 /**
  * <pre>
@@ -1216,6 +1217,7 @@ public final class ThreadUtils {
                             if (!isDone() && mTimeoutListener != null) {
                                 timeout();
                                 mTimeoutListener.onTimeout();
+                                onDone();
                             }
                         }
                     }, mTimeoutMillis);
@@ -1287,7 +1289,6 @@ public final class ThreadUtils {
             if (runner != null) {
                 runner.interrupt();
             }
-            onDone();
         }
 
 
@@ -1358,6 +1359,18 @@ public final class ThreadUtils {
                     mLatch.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                }
+            }
+            return mValue;
+        }
+
+        public T getValue(long timeout, TimeUnit unit, T defaultValue) {
+            if (!mFlag.get()) {
+                try {
+                    mLatch.await(timeout, unit);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return defaultValue;
                 }
             }
             return mValue;

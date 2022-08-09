@@ -14,6 +14,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
@@ -32,14 +33,7 @@ import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicBlur;
-import android.support.annotation.ColorInt;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.FloatRange;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
-import android.support.v4.content.ContextCompat;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 
@@ -52,6 +46,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.core.content.ContextCompat;
 
 /**
  * <pre>
@@ -85,7 +88,7 @@ public final class ImageUtils {
      * @param quality The quality.
      * @return bytes
      */
-    public static byte[] bitmap2Bytes(final Bitmap bitmap, final CompressFormat format, int quality) {
+    public static byte[] bitmap2Bytes(@Nullable final Bitmap bitmap, @NonNull final CompressFormat format, int quality) {
         if (bitmap == null) return null;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmap.compress(format, quality, baos);
@@ -98,7 +101,7 @@ public final class ImageUtils {
      * @param bytes The bytes.
      * @return bitmap
      */
-    public static Bitmap bytes2Bitmap(final byte[] bytes) {
+    public static Bitmap bytes2Bitmap(@Nullable final byte[] bytes) {
         return (bytes == null || bytes.length == 0)
                 ? null
                 : BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
@@ -110,7 +113,8 @@ public final class ImageUtils {
      * @param drawable The drawable.
      * @return bitmap
      */
-    public static Bitmap drawable2Bitmap(final Drawable drawable) {
+    public static Bitmap drawable2Bitmap(@Nullable final Drawable drawable) {
+        if (drawable == null) return null;
         if (drawable instanceof BitmapDrawable) {
             BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
             if (bitmapDrawable.getBitmap() != null) {
@@ -142,7 +146,7 @@ public final class ImageUtils {
      * @param bitmap The bitmap.
      * @return drawable
      */
-    public static Drawable bitmap2Drawable(final Bitmap bitmap) {
+    public static Drawable bitmap2Drawable(@Nullable final Bitmap bitmap) {
         return bitmap == null ? null : new BitmapDrawable(Utils.getApp().getResources(), bitmap);
     }
 
@@ -152,7 +156,7 @@ public final class ImageUtils {
      * @param drawable The drawable.
      * @return bytes
      */
-    public static byte[] drawable2Bytes(final Drawable drawable) {
+    public static byte[] drawable2Bytes(@Nullable final Drawable drawable) {
         return drawable == null ? null : bitmap2Bytes(drawable2Bitmap(drawable));
     }
 
@@ -191,23 +195,22 @@ public final class ImageUtils {
         view.setWillNotCacheDrawing(false);
         Bitmap drawingCache = view.getDrawingCache();
         Bitmap bitmap;
-        if (null == drawingCache) {
+        if (null == drawingCache || drawingCache.isRecycled()) {
             view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
             view.buildDrawingCache();
             drawingCache = view.getDrawingCache();
-            if (drawingCache != null) {
-                bitmap = Bitmap.createBitmap(drawingCache);
-            } else {
-                bitmap = Bitmap.createBitmap(view.getMeasuredWidth(), view.getMeasuredHeight(), Bitmap.Config.ARGB_8888);
+            if (null == drawingCache || drawingCache.isRecycled()) {
+                bitmap = Bitmap.createBitmap(view.getMeasuredWidth(), view.getMeasuredHeight(), Bitmap.Config.RGB_565);
                 Canvas canvas = new Canvas(bitmap);
                 view.draw(canvas);
+            } else {
+                bitmap = Bitmap.createBitmap(drawingCache);
             }
         } else {
             bitmap = Bitmap.createBitmap(drawingCache);
         }
-        view.destroyDrawingCache();
         view.setWillNotCacheDrawing(willNotCacheDrawing);
         view.setDrawingCacheEnabled(drawingCacheEnabled);
         return bitmap;
@@ -342,6 +345,9 @@ public final class ImageUtils {
      */
     public static Bitmap getBitmap(@DrawableRes final int resId) {
         Drawable drawable = ContextCompat.getDrawable(Utils.getApp(), resId);
+        if (drawable == null) {
+            return null;
+        }
         Canvas canvas = new Canvas();
         Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(),
                 drawable.getIntrinsicHeight(),
@@ -792,9 +798,25 @@ public final class ImageUtils {
      */
     public static Bitmap toRoundCorner(final Bitmap src,
                                        final float radius,
-                                       @IntRange(from = 0) int borderSize,
+                                       @FloatRange(from = 0) float borderSize,
                                        @ColorInt int borderColor) {
         return toRoundCorner(src, radius, borderSize, borderColor, false);
+    }
+
+    /**
+     * Return the round corner bitmap.
+     *
+     * @param src         The source of bitmap.
+     * @param radii       Array of 8 values, 4 pairs of [X,Y] radii
+     * @param borderSize  The size of border.
+     * @param borderColor The color of border.
+     * @return the round corner bitmap
+     */
+    public static Bitmap toRoundCorner(final Bitmap src,
+                                       final float[] radii,
+                                       @FloatRange(from = 0) float borderSize,
+                                       @ColorInt int borderColor) {
+        return toRoundCorner(src, radii, borderSize, borderColor, false);
     }
 
     /**
@@ -809,7 +831,26 @@ public final class ImageUtils {
      */
     public static Bitmap toRoundCorner(final Bitmap src,
                                        final float radius,
-                                       @IntRange(from = 0) int borderSize,
+                                       @FloatRange(from = 0) float borderSize,
+                                       @ColorInt int borderColor,
+                                       final boolean recycle) {
+        float[] radii = {radius, radius, radius, radius, radius, radius, radius, radius};
+        return toRoundCorner(src, radii, borderSize, borderColor, recycle);
+    }
+
+    /**
+     * Return the round corner bitmap.
+     *
+     * @param src         The source of bitmap.
+     * @param radii       Array of 8 values, 4 pairs of [X,Y] radii
+     * @param borderSize  The size of border.
+     * @param borderColor The color of border.
+     * @param recycle     True to recycle the source of bitmap, false otherwise.
+     * @return the round corner bitmap
+     */
+    public static Bitmap toRoundCorner(final Bitmap src,
+                                       final float[] radii,
+                                       @FloatRange(from = 0) float borderSize,
                                        @ColorInt int borderColor,
                                        final boolean recycle) {
         if (isEmptyBitmap(src)) return null;
@@ -823,14 +864,16 @@ public final class ImageUtils {
         RectF rectF = new RectF(0, 0, width, height);
         float halfBorderSize = borderSize / 2f;
         rectF.inset(halfBorderSize, halfBorderSize);
-        canvas.drawRoundRect(rectF, radius, radius, paint);
+        Path path = new Path();
+        path.addRoundRect(rectF, radii, Path.Direction.CW);
+        canvas.drawPath(path, paint);
         if (borderSize > 0) {
             paint.setShader(null);
             paint.setColor(borderColor);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(borderSize);
             paint.setStrokeCap(Paint.Cap.ROUND);
-            canvas.drawRoundRect(rectF, radius, radius, paint);
+            canvas.drawPath(path, paint);
         }
         if (recycle && !src.isRecycled() && ret != src) src.recycle();
         return ret;
@@ -846,10 +889,44 @@ public final class ImageUtils {
      * @return the round corner bitmap with border
      */
     public static Bitmap addCornerBorder(final Bitmap src,
-                                         @IntRange(from = 1) final int borderSize,
+                                         @FloatRange(from = 1) final float borderSize,
                                          @ColorInt final int color,
                                          @FloatRange(from = 0) final float cornerRadius) {
         return addBorder(src, borderSize, color, false, cornerRadius, false);
+    }
+
+    /**
+     * Return the round corner bitmap with border.
+     *
+     * @param src        The source of bitmap.
+     * @param borderSize The size of border.
+     * @param color      The color of border.
+     * @param radii      Array of 8 values, 4 pairs of [X,Y] radii
+     * @return the round corner bitmap with border
+     */
+    public static Bitmap addCornerBorder(final Bitmap src,
+                                         @FloatRange(from = 1) final float borderSize,
+                                         @ColorInt final int color,
+                                         final float[] radii) {
+        return addBorder(src, borderSize, color, false, radii, false);
+    }
+
+    /**
+     * Return the round corner bitmap with border.
+     *
+     * @param src        The source of bitmap.
+     * @param borderSize The size of border.
+     * @param color      The color of border.
+     * @param radii      Array of 8 values, 4 pairs of [X,Y] radii
+     * @param recycle    True to recycle the source of bitmap, false otherwise.
+     * @return the round corner bitmap with border
+     */
+    public static Bitmap addCornerBorder(final Bitmap src,
+                                         @FloatRange(from = 1) final float borderSize,
+                                         @ColorInt final int color,
+                                         final float[] radii,
+                                         final boolean recycle) {
+        return addBorder(src, borderSize, color, false, radii, recycle);
     }
 
     /**
@@ -863,7 +940,7 @@ public final class ImageUtils {
      * @return the round corner bitmap with border
      */
     public static Bitmap addCornerBorder(final Bitmap src,
-                                         @IntRange(from = 1) final int borderSize,
+                                         @FloatRange(from = 1) final float borderSize,
                                          @ColorInt final int color,
                                          @FloatRange(from = 0) final float cornerRadius,
                                          final boolean recycle) {
@@ -879,7 +956,7 @@ public final class ImageUtils {
      * @return the round bitmap with border
      */
     public static Bitmap addCircleBorder(final Bitmap src,
-                                         @IntRange(from = 1) final int borderSize,
+                                         @FloatRange(from = 1) final float borderSize,
                                          @ColorInt final int color) {
         return addBorder(src, borderSize, color, true, 0, false);
     }
@@ -894,7 +971,7 @@ public final class ImageUtils {
      * @return the round bitmap with border
      */
     public static Bitmap addCircleBorder(final Bitmap src,
-                                         @IntRange(from = 1) final int borderSize,
+                                         @FloatRange(from = 1) final float borderSize,
                                          @ColorInt final int color,
                                          final boolean recycle) {
         return addBorder(src, borderSize, color, true, 0, recycle);
@@ -912,10 +989,32 @@ public final class ImageUtils {
      * @return the bitmap with border
      */
     private static Bitmap addBorder(final Bitmap src,
-                                    @IntRange(from = 1) final int borderSize,
+                                    @FloatRange(from = 1) final float borderSize,
                                     @ColorInt final int color,
                                     final boolean isCircle,
                                     final float cornerRadius,
+                                    final boolean recycle) {
+        float[] radii = {cornerRadius, cornerRadius, cornerRadius, cornerRadius,
+                cornerRadius, cornerRadius, cornerRadius, cornerRadius};
+        return addBorder(src, borderSize, color, isCircle, radii, recycle);
+    }
+
+    /**
+     * Return the bitmap with border.
+     *
+     * @param src        The source of bitmap.
+     * @param borderSize The size of border.
+     * @param color      The color of border.
+     * @param isCircle   True to draw circle, false to draw corner.
+     * @param radii      Array of 8 values, 4 pairs of [X,Y] radii
+     * @param recycle    True to recycle the source of bitmap, false otherwise.
+     * @return the bitmap with border
+     */
+    private static Bitmap addBorder(final Bitmap src,
+                                    @FloatRange(from = 1) final float borderSize,
+                                    @ColorInt final int color,
+                                    final boolean isCircle,
+                                    final float[] radii,
                                     final boolean recycle) {
         if (isEmptyBitmap(src)) return null;
         Bitmap ret = recycle ? src : src.copy(src.getConfig(), true);
@@ -930,10 +1029,12 @@ public final class ImageUtils {
             float radius = Math.min(width, height) / 2f - borderSize / 2f;
             canvas.drawCircle(width / 2f, height / 2f, radius, paint);
         } else {
-            int halfBorderSize = borderSize >> 1;
-            RectF rectF = new RectF(halfBorderSize, halfBorderSize,
-                    width - halfBorderSize, height - halfBorderSize);
-            canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, paint);
+            RectF rectF = new RectF(0, 0, width, height);
+            float halfBorderSize = borderSize / 2f;
+            rectF.inset(halfBorderSize, halfBorderSize);
+            Path path = new Path();
+            path.addRoundRect(rectF, radii, Path.Direction.CW);
+            canvas.drawPath(path, paint);
         }
         return ret;
     }
@@ -1659,31 +1760,128 @@ public final class ImageUtils {
         return ret;
     }
 
+    /**
+     * @param src    The source of bitmap.
+     * @param format The format of the image.
+     * @return the file if save success, otherwise return null.
+     */
     @Nullable
     public static File save2Album(final Bitmap src,
                                   final CompressFormat format) {
-        return save2Album(src, format, 100, false);
+        return save2Album(src, "", format, 100, false);
     }
 
+    /**
+     * @param src     The source of bitmap.
+     * @param format  The format of the image.
+     * @param recycle True to recycle the source of bitmap, false otherwise.
+     * @return the file if save success, otherwise return null.
+     */
     @Nullable
     public static File save2Album(final Bitmap src,
                                   final CompressFormat format,
                                   final boolean recycle) {
-        return save2Album(src, format, 100, recycle);
+        return save2Album(src, "", format, 100, recycle);
     }
 
+    /**
+     * @param src     The source of bitmap.
+     * @param format  The format of the image.
+     * @param quality Hint to the compressor, 0-100. 0 meaning compress for
+     *                small size, 100 meaning compress for max quality. Some
+     *                formats, like PNG which is lossless, will ignore the
+     *                quality setting
+     * @return the file if save success, otherwise return null.
+     */
     @Nullable
     public static File save2Album(final Bitmap src,
                                   final CompressFormat format,
                                   final int quality) {
-        return save2Album(src, format, quality, false);
+        return save2Album(src, "", format, quality, false);
     }
 
+    /**
+     * @param src     The source of bitmap.
+     * @param format  The format of the image.
+     * @param quality Hint to the compressor, 0-100. 0 meaning compress for
+     *                small size, 100 meaning compress for max quality. Some
+     *                formats, like PNG which is lossless, will ignore the
+     *                quality setting
+     * @param recycle True to recycle the source of bitmap, false otherwise.
+     * @return the file if save success, otherwise return null.
+     */
     @Nullable
     public static File save2Album(final Bitmap src,
                                   final CompressFormat format,
                                   final int quality,
                                   final boolean recycle) {
+        return save2Album(src, "", format, quality, recycle);
+    }
+
+    /**
+     * @param src     The source of bitmap.
+     * @param dirName The name of directory.
+     * @param format  The format of the image.
+     * @return the file if save success, otherwise return null.
+     */
+    @Nullable
+    public static File save2Album(final Bitmap src,
+                                  final String dirName,
+                                  final CompressFormat format) {
+        return save2Album(src, dirName, format, 100, false);
+    }
+
+    /**
+     * @param src     The source of bitmap.
+     * @param dirName The name of directory.
+     * @param format  The format of the image.
+     * @param recycle True to recycle the source of bitmap, false otherwise.
+     * @return the file if save success, otherwise return null.
+     */
+    @Nullable
+    public static File save2Album(final Bitmap src,
+                                  final String dirName,
+                                  final CompressFormat format,
+                                  final boolean recycle) {
+        return save2Album(src, dirName, format, 100, recycle);
+    }
+
+    /**
+     * @param src     The source of bitmap.
+     * @param dirName The name of directory.
+     * @param format  The format of the image.
+     * @param quality Hint to the compressor, 0-100. 0 meaning compress for
+     *                small size, 100 meaning compress for max quality. Some
+     *                formats, like PNG which is lossless, will ignore the
+     *                quality setting
+     * @return the file if save success, otherwise return null.
+     */
+    @Nullable
+    public static File save2Album(final Bitmap src,
+                                  final String dirName,
+                                  final CompressFormat format,
+                                  final int quality) {
+        return save2Album(src, dirName, format, quality, false);
+    }
+
+    /**
+     * @param src     The source of bitmap.
+     * @param dirName The name of directory.
+     * @param format  The format of the image.
+     * @param quality Hint to the compressor, 0-100. 0 meaning compress for
+     *                small size, 100 meaning compress for max quality. Some
+     *                formats, like PNG which is lossless, will ignore the
+     *                quality setting
+     * @param recycle True to recycle the source of bitmap, false otherwise.
+     * @return the file if save success, otherwise return null.
+     */
+    @Nullable
+    public static File save2Album(final Bitmap src,
+                                  final String dirName,
+                                  final CompressFormat format,
+                                  final int quality,
+                                  final boolean recycle) {
+        String safeDirName = TextUtils.isEmpty(dirName) ? Utils.getApp().getPackageName() : dirName;
         String suffix = CompressFormat.JPEG.equals(format) ? "JPG" : format.name();
         String fileName = System.currentTimeMillis() + "_" + quality + "." + suffix;
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -1692,7 +1890,7 @@ public final class ImageUtils {
                 return null;
             }
             File picDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-            File destFile = new File(picDir, Utils.getApp().getPackageName() + "/" + fileName);
+            File destFile = new File(picDir, safeDirName + "/" + fileName);
             if (!save(src, destFile, format, quality, recycle)) {
                 return null;
             }
@@ -1708,7 +1906,8 @@ public final class ImageUtils {
             } else {
                 contentUri = MediaStore.Images.Media.INTERNAL_CONTENT_URI;
             }
-            contentValues.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM + "/" + Utils.getApp().getPackageName());
+            contentValues.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM + "/" + safeDirName);
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 1);
             Uri uri = Utils.getApp().getContentResolver().insert(contentUri, contentValues);
             if (uri == null) {
                 return null;
@@ -1717,8 +1916,14 @@ public final class ImageUtils {
             try {
                 os = Utils.getApp().getContentResolver().openOutputStream(uri);
                 src.compress(format, quality, os);
+
+                contentValues.clear();
+                contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0);
+                Utils.getApp().getContentResolver().update(uri, contentValues, null, null);
+
                 return UtilsBridge.uri2File(uri);
             } catch (Exception e) {
+                Utils.getApp().getContentResolver().delete(uri, null, null);
                 e.printStackTrace();
                 return null;
             } finally {

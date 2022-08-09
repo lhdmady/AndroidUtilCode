@@ -12,23 +12,18 @@ import com.blankj.utilcode.util.Utils;
  *     desc  :
  * </pre>
  */
-public class MvpModel extends BaseModel implements IMvp.Model {
+public class MvpModel extends BaseModel implements MvpMvp.Model {
 
     private int index;
 
     @Override
-    public void onCreateModel() {
+    public void onCreate() {
         index = 0;
     }
 
     @Override
-    public void onDestroyModel() {
-
-    }
-
-    @Override
     public void requestUpdateMsg(final Utils.Consumer<String> consumer) {
-        ThreadUtils.executeByCached(addAutoDestroyTask(new ThreadUtils.SimpleTask<String>() {
+        ThreadUtils.executeByCached(new ThreadUtils.SimpleTask<String>() {
             @Override
             public String doInBackground() throws Throwable {
                 Thread.sleep(2000);
@@ -39,6 +34,11 @@ public class MvpModel extends BaseModel implements IMvp.Model {
             public void onSuccess(String result) {
                 consumer.accept(result);
             }
-        }));
+        });
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
     }
 }

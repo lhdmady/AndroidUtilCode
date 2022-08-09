@@ -2,10 +2,11 @@ package com.blankj.utilcode.util;
 
 import android.content.ContentResolver;
 import android.provider.Settings;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
 import android.view.Window;
 import android.view.WindowManager;
+
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
 
 /**
  * <pre>
@@ -105,7 +106,7 @@ public final class BrightnessUtils {
      * @param window 窗口
      * @return 屏幕亮度 0-255
      */
-    public static int getWindowBrightness(final Window window) {
+    public static int getWindowBrightness(@NonNull final Window window) {
         WindowManager.LayoutParams lp = window.getAttributes();
         float brightness = lp.screenBrightness;
         if (brightness < 0) return getBrightness();

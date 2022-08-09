@@ -3,7 +3,6 @@ package com.blankj.utildebug.base.view;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.os.SystemClock;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -16,6 +15,8 @@ import com.blankj.utilcode.util.SizeUtils;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+
+import androidx.annotation.Nullable;
 
 /**
  * <pre>
@@ -167,7 +168,7 @@ public class SwipeRightMenu extends LinearLayout {
                             if (isOpen()) {
                                 if (isTouchPointInView(mContentView, x, y)) {
                                     close(true);
-                                    final long now = SystemClock.uptimeMillis();
+                                    final long now = SystemClock.elapsedRealtime();
                                     final MotionEvent cancelEvent = MotionEvent.obtain(now, now,
                                             MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                                     super.dispatchTouchEvent(cancelEvent);
@@ -292,7 +293,7 @@ public class SwipeRightMenu extends LinearLayout {
     }
 
     private void cancelChildViewTouch() {
-        final long now = SystemClock.uptimeMillis();
+        final long now = SystemClock.elapsedRealtime();
         final MotionEvent cancelEvent = MotionEvent.obtain(now, now,
                 MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
         final int childCount = getChildCount();

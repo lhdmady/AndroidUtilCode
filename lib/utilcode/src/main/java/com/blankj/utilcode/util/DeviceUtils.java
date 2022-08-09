@@ -10,10 +10,11 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.provider.Settings;
-import android.support.annotation.RequiresApi;
-import android.support.annotation.RequiresPermission;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+
+import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresPermission;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -113,10 +114,10 @@ public final class DeviceUtils {
      *
      * @return the MAC address
      */
-    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, INTERNET, CHANGE_WIFI_STATE})
+    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, CHANGE_WIFI_STATE})
     public static String getMacAddress() {
         String macAddress = getMacAddress((String[]) null);
-        if (!macAddress.equals("") || getWifiEnabled()) return macAddress;
+        if (!TextUtils.isEmpty(macAddress) || getWifiEnabled()) return macAddress;
         setWifiEnabled(true);
         setWifiEnabled(false);
         return getMacAddress((String[]) null);
@@ -151,7 +152,7 @@ public final class DeviceUtils {
      *
      * @return the MAC address
      */
-    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, INTERNET})
+    @RequiresPermission(allOf = {ACCESS_WIFI_STATE})
     public static String getMacAddress(final String... excepts) {
         String macAddress = getMacAddressByNetworkInterface();
         if (isAddressNotInExcepts(macAddress, excepts)) {
@@ -173,25 +174,37 @@ public final class DeviceUtils {
     }
 
     private static boolean isAddressNotInExcepts(final String address, final String... excepts) {
+        if (TextUtils.isEmpty(address)) {
+            return false;
+        }
+        if ("02:00:00:00:00:00".equals(address)) {
+            return false;
+        }
         if (excepts == null || excepts.length == 0) {
-            return !"02:00:00:00:00:00".equals(address);
+            return true;
         }
         for (String filter : excepts) {
-            if (address.equals(filter)) {
+            if (filter != null && filter.equals(address)) {
                 return false;
             }
         }
         return true;
     }
 
-    @SuppressLint({"MissingPermission", "HardwareIds"})
+    @RequiresPermission(ACCESS_WIFI_STATE)
     private static String getMacAddressByWifiInfo() {
         try {
             final WifiManager wifi = (WifiManager) Utils.getApp()
                     .getApplicationContext().getSystemService(WIFI_SERVICE);
             if (wifi != null) {
                 final WifiInfo info = wifi.getConnectionInfo();
-                if (info != null) return info.getMacAddress();
+                if (info != null) {
+                    @SuppressLint("HardwareIds")
+                    String macAddress = info.getMacAddress();
+                    if (!TextUtils.isEmpty(macAddress)) {
+                        return macAddress;
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -376,6 +389,19 @@ public final class DeviceUtils {
         return false;
     }
 
+    /**
+     * Whether user has enabled development settings.
+     *
+     * @return whether user has enabled development settings.
+     */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    public static boolean isDevelopmentSettingsEnabled() {
+        return Settings.Global.getInt(
+                Utils.getApp().getContentResolver(),
+                Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0
+        ) > 0;
+    }
+
 
     private static final    String KEY_UDID = "KEY_UDID";
     private volatile static String udid;
@@ -388,7 +414,6 @@ public final class DeviceUtils {
      *
      * @return the unique device id
      */
-    @SuppressLint({"MissingPermission", "HardwareIds"})
     public static String getUniqueDeviceId() {
         return getUniqueDeviceId("", true);
     }
@@ -402,7 +427,6 @@ public final class DeviceUtils {
      * @param prefix The prefix of the unique device id.
      * @return the unique device id
      */
-    @SuppressLint({"MissingPermission", "HardwareIds"})
     public static String getUniqueDeviceId(String prefix) {
         return getUniqueDeviceId(prefix, true);
     }
@@ -416,7 +440,6 @@ public final class DeviceUtils {
      * @param useCache True to use cache, false otherwise.
      * @return the unique device id
      */
-    @SuppressLint({"MissingPermission", "HardwareIds"})
     public static String getUniqueDeviceId(boolean useCache) {
         return getUniqueDeviceId("", useCache);
     }
@@ -431,7 +454,6 @@ public final class DeviceUtils {
      * @param useCache True to use cache, false otherwise.
      * @return the unique device id
      */
-    @SuppressLint({"MissingPermission", "HardwareIds"})
     public static String getUniqueDeviceId(String prefix, boolean useCache) {
         if (!useCache) {
             return getUniqueDeviceIdReal(prefix);
@@ -462,7 +484,7 @@ public final class DeviceUtils {
         return saveUdid(prefix + 9, "");
     }
 
-    @SuppressLint({"MissingPermission", "HardwareIds"})
+    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, INTERNET, CHANGE_WIFI_STATE})
     public static boolean isSameDevice(final String uniqueDeviceId) {
         // {prefix}{type}{32id}
         if (TextUtils.isEmpty(uniqueDeviceId) && uniqueDeviceId.length() < 33) return false;

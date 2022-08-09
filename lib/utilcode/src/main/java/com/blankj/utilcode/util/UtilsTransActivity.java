@@ -3,14 +3,15 @@ package com.blankj.utilcode.util;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * <pre>
@@ -131,7 +132,7 @@ public class UtilsTransActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         TransActivityDelegate callback = CALLBACK_MAP.get(this);
         if (callback == null) return;
@@ -173,7 +174,7 @@ public class UtilsTransActivity extends AppCompatActivity {
 
         public void onSaveInstanceState(@NonNull UtilsTransActivity activity, Bundle outState) {/**/}
 
-        public void onRequestPermissionsResult(@NonNull UtilsTransActivity activity, int requestCode, String[] permissions, int[] grantResults) {/**/}
+        public void onRequestPermissionsResult(@NonNull UtilsTransActivity activity, int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {/**/}
 
         public void onActivityResult(@NonNull UtilsTransActivity activity, int requestCode, int resultCode, Intent data) {/**/}
 

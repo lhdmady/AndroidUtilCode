@@ -8,13 +8,16 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.Settings;
-import android.support.annotation.RequiresPermission;
-import android.support.v4.content.FileProvider;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
+import androidx.core.content.FileProvider;
 
 import static android.Manifest.permission.CALL_PHONE;
 
@@ -71,7 +74,7 @@ public final class IntentUtils {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             uri = Uri.fromFile(file);
         } else {
-            String authority = Utils.getApp().getPackageName() + ".utilcode.provider";
+            String authority = Utils.getApp().getPackageName() + ".utilcode.fileprovider";
             uri = FileProvider.getUriForFile(Utils.getApp(), authority, file);
         }
         return getInstallAppIntent(uri);
@@ -153,12 +156,42 @@ public final class IntentUtils {
      * @param content The content.
      * @return the intent of share text
      */
-
     public static Intent getShareTextIntent(final String content) {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, content);
+        intent = Intent.createChooser(intent, "");
         return getIntent(intent, true);
+    }
+
+    /**
+     * Return the intent of share image.
+     *
+     * @param imagePath The path of image.
+     * @return the intent of share image
+     */
+    public static Intent getShareImageIntent(final String imagePath) {
+        return getShareTextImageIntent("", imagePath);
+    }
+
+    /**
+     * Return the intent of share image.
+     *
+     * @param imageFile The file of image.
+     * @return the intent of share image
+     */
+    public static Intent getShareImageIntent(final File imageFile) {
+        return getShareTextImageIntent("", imageFile);
+    }
+
+    /**
+     * Return the intent of share image.
+     *
+     * @param imageUri The uri of image.
+     * @return the intent of share image
+     */
+    public static Intent getShareImageIntent(final Uri imageUri) {
+        return getShareTextImageIntent("", imageUri);
     }
 
     /**
@@ -168,36 +201,65 @@ public final class IntentUtils {
      * @param imagePath The path of image.
      * @return the intent of share image
      */
-    public static Intent getShareImageIntent(final String content, final String imagePath) {
-        if (UtilsBridge.isSpace(imagePath)) return null;
-        return getShareImageIntent(content, new File(imagePath));
+    public static Intent getShareTextImageIntent(@Nullable final String content, final String imagePath) {
+        return getShareTextImageIntent(content, UtilsBridge.getFileByPath(imagePath));
     }
 
     /**
      * Return the intent of share image.
      *
-     * @param content The content.
-     * @param image   The file of image.
+     * @param content   The content.
+     * @param imageFile The file of image.
      * @return the intent of share image
      */
-    public static Intent getShareImageIntent(final String content, final File image) {
-        if (image == null || !image.isFile()) return null;
-        return getShareImageIntent(content, UtilsBridge.file2Uri(image));
+    public static Intent getShareTextImageIntent(@Nullable final String content, final File imageFile) {
+        return getShareTextImageIntent(content, UtilsBridge.file2Uri(imageFile));
     }
 
     /**
      * Return the intent of share image.
      *
-     * @param content The content.
-     * @param uri     The uri of image.
+     * @param content  The content.
+     * @param imageUri The uri of image.
      * @return the intent of share image
      */
-    public static Intent getShareImageIntent(final String content, final Uri uri) {
+    public static Intent getShareTextImageIntent(@Nullable final String content, final Uri imageUri) {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.putExtra(Intent.EXTRA_TEXT, content);
-        intent.putExtra(Intent.EXTRA_STREAM, uri);
+        intent.putExtra(Intent.EXTRA_STREAM, imageUri);
         intent.setType("image/*");
+        intent = Intent.createChooser(intent, "");
         return getIntent(intent, true);
+    }
+
+    /**
+     * Return the intent of share images.
+     *
+     * @param imagePaths The paths of images.
+     * @return the intent of share images
+     */
+    public static Intent getShareImageIntent(final LinkedList<String> imagePaths) {
+        return getShareTextImageIntent("", imagePaths);
+    }
+
+    /**
+     * Return the intent of share images.
+     *
+     * @param images The files of images.
+     * @return the intent of share images
+     */
+    public static Intent getShareImageIntent(final List<File> images) {
+        return getShareTextImageIntent("", images);
+    }
+
+    /**
+     * Return the intent of share images.
+     *
+     * @param uris The uris of image.
+     * @return the intent of share image
+     */
+    public static Intent getShareImageIntent(final ArrayList<Uri> uris) {
+        return getShareTextImageIntent("", uris);
     }
 
     /**
@@ -207,14 +269,18 @@ public final class IntentUtils {
      * @param imagePaths The paths of images.
      * @return the intent of share images
      */
-    public static Intent getShareImageIntent(final String content,
-                                             final LinkedList<String> imagePaths) {
-        if (imagePaths == null || imagePaths.isEmpty()) return null;
+    public static Intent getShareTextImageIntent(@Nullable final String content,
+                                                 final LinkedList<String> imagePaths) {
         List<File> files = new ArrayList<>();
-        for (String imagePath : imagePaths) {
-            files.add(new File(imagePath));
+        if (imagePaths != null) {
+            for (String imagePath : imagePaths) {
+                File file = UtilsBridge.getFileByPath(imagePath);
+                if (file != null) {
+                    files.add(file);
+                }
+            }
         }
-        return getShareImageIntent(content, files);
+        return getShareTextImageIntent(content, files);
     }
 
     /**
@@ -224,14 +290,17 @@ public final class IntentUtils {
      * @param images  The files of images.
      * @return the intent of share images
      */
-    public static Intent getShareImageIntent(final String content, final List<File> images) {
-        if (images == null || images.isEmpty()) return null;
+    public static Intent getShareTextImageIntent(@Nullable final String content, final List<File> images) {
         ArrayList<Uri> uris = new ArrayList<>();
-        for (File image : images) {
-            if (!image.isFile()) continue;
-            uris.add(UtilsBridge.file2Uri(image));
+        if (images != null) {
+            for (File image : images) {
+                Uri uri = UtilsBridge.file2Uri(image);
+                if (uri != null) {
+                    uris.add(uri);
+                }
+            }
         }
-        return getShareImageIntent(content, uris);
+        return getShareTextImageIntent(content, uris);
     }
 
     /**
@@ -241,11 +310,12 @@ public final class IntentUtils {
      * @param uris    The uris of image.
      * @return the intent of share image
      */
-    public static Intent getShareImageIntent(final String content, final ArrayList<Uri> uris) {
+    public static Intent getShareTextImageIntent(@Nullable final String content, final ArrayList<Uri> uris) {
         Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
         intent.putExtra(Intent.EXTRA_TEXT, content);
         intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
         intent.setType("image/*");
+        intent = Intent.createChooser(intent, "");
         return getIntent(intent, true);
     }
 
@@ -320,9 +390,9 @@ public final class IntentUtils {
     public static Intent getShutdownIntent() {
         Intent intent;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            intent = new Intent(Intent.ACTION_SHUTDOWN);
-        } else {
             intent = new Intent("com.android.internal.intent.action.REQUEST_SHUTDOWN");
+        } else {
+            intent = new Intent("android.intent.action.ACTION_REQUEST_SHUTDOWN");
         }
         intent.putExtra("android.intent.extra.KEY_CONFIRM", false);
         return intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -334,8 +404,8 @@ public final class IntentUtils {
      * @param phoneNumber The phone number.
      * @return the intent of dial
      */
-    public static Intent getDialIntent(final String phoneNumber) {
-        Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + phoneNumber));
+    public static Intent getDialIntent(@NonNull final String phoneNumber) {
+        Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + Uri.encode(phoneNumber)));
         return getIntent(intent, true);
     }
 
@@ -347,8 +417,8 @@ public final class IntentUtils {
      * @return the intent of call
      */
     @RequiresPermission(CALL_PHONE)
-    public static Intent getCallIntent(final String phoneNumber) {
-        Intent intent = new Intent("android.intent.action.CALL", Uri.parse("tel:" + phoneNumber));
+    public static Intent getCallIntent(@NonNull final String phoneNumber) {
+        Intent intent = new Intent("android.intent.action.CALL", Uri.parse("tel:" + Uri.encode(phoneNumber)));
         return getIntent(intent, true);
     }
 
@@ -359,8 +429,8 @@ public final class IntentUtils {
      * @param content     The content of SMS.
      * @return the intent of send SMS
      */
-    public static Intent getSendSmsIntent(final String phoneNumber, final String content) {
-        Uri uri = Uri.parse("smsto:" + phoneNumber);
+    public static Intent getSendSmsIntent(@NonNull final String phoneNumber, final String content) {
+        Uri uri = Uri.parse("smsto:" + Uri.encode(phoneNumber));
         Intent intent = new Intent(Intent.ACTION_SENDTO, uri);
         intent.putExtra("sms_body", content);
         return getIntent(intent, true);
@@ -373,10 +443,21 @@ public final class IntentUtils {
      * @return the intent of capture
      */
     public static Intent getCaptureIntent(final Uri outUri) {
+        return getCaptureIntent(outUri, false);
+    }
+
+    /**
+     * Return the intent of capture.
+     *
+     * @param outUri    The uri of output.
+     * @param isNewTask True to add flag of new task, false otherwise.
+     * @return the intent of capture
+     */
+    public static Intent getCaptureIntent(final Uri outUri, final boolean isNewTask) {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, outUri);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        return getIntent(intent, true);
+        return getIntent(intent, isNewTask);
     }
 
     private static Intent getIntent(final Intent intent, final boolean isNewTask) {

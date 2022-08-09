@@ -1,12 +1,7 @@
 package com.blankj.common.activity;
 
+import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.CallSuper;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.StringRes;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -20,9 +15,17 @@ import com.blankj.common.R;
 import com.blankj.common.dialog.CommonDialogLoading;
 import com.blankj.common.item.CommonItem;
 import com.blankj.swipepanel.SwipePanel;
+import com.blankj.utilcode.util.LanguageUtils;
 import com.blankj.utilcode.util.SizeUtils;
 
 import java.util.List;
+
+import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * <pre>
@@ -41,6 +44,11 @@ public abstract class CommonActivity extends BaseActivity {
     private CommonDialogLoading mDialogLoading;
 
     public View commonContentView;
+
+//    @Override
+//    protected void attachBaseContext(Context newBase) {
+//        super.attachBaseContext(LanguageUtils.attachBaseContext(newBase));
+//    }
 
     ///////////////////////////////////////////////////////////////////////////
     // title view

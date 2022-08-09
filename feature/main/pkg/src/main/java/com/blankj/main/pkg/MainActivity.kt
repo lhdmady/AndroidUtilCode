@@ -2,8 +2,8 @@ package com.blankj.main.pkg
 
 import android.graphics.Color
 import android.os.Bundle
-import android.support.v7.app.ActionBarDrawerToggle
 import android.view.View
+import androidx.appcompat.app.ActionBarDrawerToggle
 import com.blankj.common.activity.CommonActivity
 import com.blankj.common.item.CommonItem
 import com.blankj.common.item.CommonItemClick
@@ -47,10 +47,10 @@ class MainActivity : CommonActivity() {
         super.initView(savedInstanceState, contentView)
         setCommonItems(mainRv, CollectionUtils.newArrayList<CommonItem<*>>(
                 CommonItemClick(R.string.core_util, true) {
-                    ApiUtils.getApi(UtilCodeApi::class.java).startUtilCodeActivity(this)
+                    ApiUtils.getApi(UtilCodeApi::class.java)?.startUtilCodeActivity(this)
                 },
                 CommonItemClick(R.string.sub_util, true) {
-                    ApiUtils.getApi(SubUtilApi::class.java).startSubUtilActivity(this)
+                    ApiUtils.getApi(SubUtilApi::class.java)?.startSubUtilActivity(this)
                 }
         ))
 

@@ -2,7 +2,8 @@ package com.blankj.base;
 
 import android.app.Application;
 import android.content.Context;
-import android.support.multidex.MultiDex;
+
+import androidx.multidex.MultiDex;
 
 import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.CrashUtils;
@@ -74,15 +75,16 @@ public class BaseApplication extends Application {
                         return "LogUtils Formatter ArrayList { " + arrayList.toString() + " }";
                     }
                 })
-                .setFileWriter(null);
+                .addFileExtraHead("ExtraKey", "ExtraValue");
         LogUtils.i(config.toString());
     }
 
     private void initCrash() {
         CrashUtils.init(new CrashUtils.OnCrashListener() {
             @Override
-            public void onCrash(String crashInfo, Throwable e) {
-                LogUtils.e(crashInfo);
+            public void onCrash(CrashUtils.CrashInfo crashInfo) {
+                crashInfo.addExtraHead("extraKey", "extraValue");
+                LogUtils.e(crashInfo.toString());
                 AppUtils.relaunchApp();
             }
         });
